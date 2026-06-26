@@ -1,0 +1,543 @@
+cat > /mnt/user-data/outputs/index.html << 'GAMEFILE'
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Hero 🚀</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #080818; font-family: 'Courier New', monospace; }
+canvas { display: block; position: absolute; top: 0; left: 0; }
+#hud {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 10px 18px; display: flex; justify-content: space-between; align-items: center;
+  pointer-events: none;
+}
+#score-box { color: #7fd6f7; font-size: 15px; font-weight: bold; text-shadow: 0 0 10px rgba(127,214,247,0.5); }
+#lives-box { color: #ff6b6b; font-size: 16px; }
+#progress-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+#progress-label { color: #888; font-size: 10px; }
+#progress-bar { width: 140px; height: 8px; background: #1a1a3a; border-radius: 4px; overflow: hidden; }
+#progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7fd6f7, #a78bfa); border-radius: 4px; transition: width 0.3s; }
+
+#overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(8,8,24,0.95); color: white; text-align: center; padding: 20px;
+}
+#overlay h1 { font-size: 30px; color: #7fd6f7; margin-bottom: 4px; text-shadow: 0 0 20px rgba(127,214,247,0.4); }
+#overlay .tagline { color: #a78bfa; font-size: 13px; margin-bottom: 18px; }
+.hint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 400px; margin-bottom: 18px; }
+.hint-box { padding: 10px 12px; border-radius: 8px; font-size: 11px; line-height: 1.7; text-align: right; }
+.hint-box h4 { font-size: 11px; margin-bottom: 4px; font-weight: bold; }
+.hint-box.good { background: rgba(127,214,247,0.08); border: 1px solid rgba(127,214,247,0.25); color: #9de8ff; }
+.hint-box.good h4 { color: #7fd6f7; }
+.hint-box.bad  { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.25); color: #ffaaaa; }
+.hint-box.bad  h4 { color: #ff6b6b; }
+#overlay p.msg { font-size: 13px; color: #bbb; margin-bottom: 4px; max-width: 340px; line-height: 1.7; }
+#overlay .final-score { font-size: 24px; color: #ffd700; margin-bottom: 12px; }
+.play-btn {
+  background: #7fd6f7; color: #080818; border: none;
+  padding: 12px 38px; border-radius: 8px; font-size: 16px;
+  font-weight: bold; cursor: pointer; font-family: inherit;
+  transition: transform 0.1s, background 0.2s; margin-top: 6px;
+}
+.play-btn:hover { background: #5bc0e0; transform: scale(1.03); }
+.play-btn:active { transform: scale(0.97); }
+#controls-tip {
+  position: absolute; bottom: 12px; left: 0; right: 0;
+  text-align: center; color: #333; font-size: 11px; pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="score-box">نقاط: 0</div>
+  <div id="progress-wrap">
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+    <div id="progress-label">0 / 500</div>
+  </div>
+  <div id="lives-box">❤️❤️❤️</div>
+</div>
+
+<div id="overlay">
+  <h1>SEO Hero 🚀</h1>
+  <div class="tagline">ابقى في الصفحة الأولى!</div>
+  <div class="hint-grid">
+    <div class="hint-box good">
+      <h4>✅ اجمع</h4>
+      كلمات مفتاحية طويلة<br>
+      لينكات .edu و .gov<br>
+      Core Web Vitals<br>
+      Schema Markup<br>
+      محتوى E-E-A-T<br>
+      وأكتر من كده!
+    </div>
+    <div class="hint-box bad">
+      <h4>❌ اتجنب</h4>
+      Keyword Stuffing<br>
+      Duplicate Content<br>
+      Toxic Backlinks<br>
+      Slow Server (TTFB)<br>
+      Hidden Text<br>
+      وأكتر من كده!
+    </div>
+  </div>
+  <p class="msg">وصّل لـ 500 نقطة — قفزتين في الهواء متاحين! كل مرة هتلاقي حاجات سيو مختلفة.</p>
+  <button class="play-btn" onclick="startGame()">العب دلوقتي ▶</button>
+</div>
+
+<div id="controls-tip">مفتاح المسافة / ↑ / دوس على الشاشة للقفز • قفزتين!</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const scoreEl = document.getElementById('score-box');
+const livesEl = document.getElementById('lives-box');
+const progFill = document.getElementById('progress-fill');
+const progLabel = document.getElementById('progress-label');
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+// ─── FULL SEO ITEM POOL ────────────────────────────────────────────────────
+const GOOD_POOL = [
+  // On-page
+  { icon: '🔑', label: 'Long-tail Keyword',     pts: 10, cat: 'on-page' },
+  { icon: '🏷️', label: 'H1 واضح ومُحسَّن',      pts: 10, cat: 'on-page' },
+  { icon: '📝', label: 'Meta Description',       pts: 10, cat: 'on-page' },
+  { icon: '🖼️', label: 'Alt Text للصور',         pts: 8,  cat: 'on-page' },
+  { icon: '🔗', label: 'Internal Linking',       pts: 12, cat: 'on-page' },
+  { icon: '📋', label: 'Table of Contents',      pts: 8,  cat: 'on-page' },
+  { icon: '✍️', label: 'محتوى E-E-A-T',          pts: 20, cat: 'on-page' },
+  { icon: '📐', label: 'Schema Markup',          pts: 15, cat: 'technical' },
+  { icon: '⚡', label: 'Core Web Vitals',        pts: 25, cat: 'technical' },
+  { icon: '🗺️', label: 'XML Sitemap',            pts: 12, cat: 'technical' },
+  { icon: '🤖', label: 'Robots.txt صح',          pts: 10, cat: 'technical' },
+  { icon: '🔒', label: 'HTTPS',                  pts: 15, cat: 'technical' },
+  { icon: '📱', label: 'Mobile-First',           pts: 20, cat: 'technical' },
+  { icon: '🏎️', label: 'سرعة الصفحة',           pts: 18, cat: 'technical' },
+  { icon: '💪', label: 'Backlink .edu',          pts: 25, cat: 'off-page' },
+  { icon: '🏛️', label: 'Backlink .gov',          pts: 30, cat: 'off-page' },
+  { icon: '📰', label: 'Digital PR',             pts: 20, cat: 'off-page' },
+  { icon: '🌍', label: 'Brand Mentions',         pts: 12, cat: 'off-page' },
+  { icon: '⭐', label: 'Google Reviews',         pts: 15, cat: 'off-page' },
+  { icon: '🎯', label: 'Search Intent Match',    pts: 20, cat: 'content' },
+  { icon: '🔄', label: 'Content Refresh',        pts: 15, cat: 'content' },
+  { icon: '📊', label: 'Featured Snippet',       pts: 25, cat: 'content' },
+  { icon: '❓', label: 'People Also Ask',        pts: 15, cat: 'content' },
+  { icon: '🎬', label: 'Video Embed',            pts: 12, cat: 'content' },
+  { icon: '📈', label: 'Click-through Rate',     pts: 18, cat: 'metrics' },
+  { icon: '⏱️', label: 'Dwell Time عالي',        pts: 15, cat: 'metrics' },
+  { icon: '📉', label: 'Bounce Rate منخفض',      pts: 15, cat: 'metrics' },
+];
+
+const BAD_POOL = [
+  { icon: '🚫', label: 'Keyword Stuffing',       cat: 'penalty' },
+  { icon: '💀', label: 'Duplicate Content',      cat: 'penalty' },
+  { icon: '🔓', label: 'موقع متهاك',             cat: 'penalty' },
+  { icon: '🤡', label: 'Toxic Backlinks',        cat: 'penalty' },
+  { icon: '👻', label: 'Hidden Text',            cat: 'penalty' },
+  { icon: '🐌', label: 'Slow TTFB',             cat: 'technical' },
+  { icon: '💔', label: 'Broken Links كتير',      cat: 'technical' },
+  { icon: '🔀', label: 'Redirect Chains',        cat: 'technical' },
+  { icon: '📵', label: 'مش Mobile Friendly',     cat: 'technical' },
+  { icon: '🎭', label: 'Cloaking',               cat: 'blackhat' },
+  { icon: '💸', label: 'Link Buying',            cat: 'blackhat' },
+  { icon: '🌀', label: 'Doorway Pages',          cat: 'blackhat' },
+  { icon: '🗑️', label: 'Thin Content',           cat: 'content' },
+  { icon: '📋', label: 'Copied Content',         cat: 'content' },
+  { icon: '🤖', label: 'AI Spam Content',        cat: 'content' },
+  { icon: '📧', label: 'سبام Schema',            cat: 'technical' },
+  { icon: '⚠️', label: 'Manual Action',          cat: 'penalty' },
+  { icon: '🔗', label: 'Link Farm',              cat: 'blackhat' },
+];
+
+const POSITIVE_MSGS = [
+  'ممتاز! 🔥', 'Google بيحبك! ❤️', 'SERP ليك! 🏆',
+  'فاهم السيو! 💪', 'أول صفحة! ⭐', 'تمام التمام! 🎯',
+  'Indexed! ✅', 'Ranking Up! 📈',
+];
+const NEGATIVE_MSGS = [
+  'Penalty! 🚨', 'Deindex قادم! ☠️', 'Manual Action! 🚫',
+  'Google مش عاجبه! 😬', 'Spam! ⚠️', 'Ranking Down! 📉',
+];
+const WIN_MSGS = [
+  '"أنت مش بس عارف السيو — أنت عايشه!\nالـ SERP هيبقى ليك دايمًا." 🏆',
+  '"Algorithm بيخافك!\nأول صفحة في Google حقك." 🚀',
+  '"Core Update عدى عليك وأنت تمام!\nده معناه إنت شغال بضمير." ⭐',
+];
+const LOSE_MSGS = [
+  '"حتى Google بيتعلم من غلطاته،\nإنت كمان تقدر! جرب تاني." 😅',
+  '"Manual Action؟ معلش!\nكل خبير اتعاقب مرة، الأهم ترجع أقوى." 💪',
+  '"الـ Penalty مش نهاية الدنيا،\nاعمل Reconsideration Request وارجع!" 🔄',
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let state = 'idle';
+let score = 0, lives = 3, frame = 0, speed = 3.5;
+let animId = null;
+
+const W = () => canvas.width;
+const H = () => canvas.height;
+const GY = () => H() - 72; // ground y (feet level)
+
+let hero, objects, particles, floatMsgs, groundOff, usedGood, usedBad;
+
+function initState() {
+  hero = { x: 95, y: GY(), vy: 0, jumps: 0, anim: 0, hit: false };
+  objects = []; particles = []; floatMsgs = [];
+  groundOff = 0; usedGood = []; usedBad = [];
+  score = 0; lives = 3; frame = 0; speed = 3.5;
+}
+
+function pickItem(pool, usedArr) {
+  let available = pool.filter((_, i) => !usedArr.includes(i));
+  if (available.length === 0) { usedArr.length = 0; available = pool; }
+  const idx = pool.indexOf(available[Math.floor(Math.random() * available.length)]);
+  usedArr.push(idx);
+  return pool[idx];
+}
+
+function updateUI() {
+  scoreEl.textContent = 'نقاط: ' + score;
+  livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) || '💔';
+  const pct = Math.min(score / 500, 1) * 100;
+  progFill.style.width = pct + '%';
+  progLabel.textContent = score + ' / 500';
+}
+
+function startGame() {
+  overlay.style.display = 'none';
+  state = 'playing';
+  initState();
+  updateUI();
+  if (animId) cancelAnimationFrame(animId);
+  loop();
+}
+
+function jump() {
+  if (state !== 'playing') return;
+  if (hero.jumps < 2) {
+    hero.vy = hero.jumps === 0 ? -16 : -12;
+    hero.jumps++;
+    addParticles(hero.x, hero.y, true, 4, '#a78bfa');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+});
+canvas.addEventListener('click', jump);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
+
+// ─── PARTICLE ────────────────────────────────────────────────────────────
+function addParticles(x, y, good, count = 12, overrideColor = null) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 7,
+      vy: (Math.random() - 1.8) * 5,
+      life: 1,
+      color: overrideColor || (good ? '#7fd6f7' : '#ff6b6b'),
+      size: Math.random() * 5 + 2,
+    });
+  }
+}
+
+// ─── DRAW HELPERS ─────────────────────────────────────────────────────────
+function drawBG() {
+  // Deep space gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H());
+  grad.addColorStop(0, '#080818');
+  grad.addColorStop(1, '#0d0d2a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W(), H());
+}
+
+// Procedural stars (seeded by index so they're stable)
+const STARS = Array.from({ length: 80 }, (_, i) => ({
+  x: (i * 293 + 17) % 1400,
+  y: (i * 137 + 53) % 380,
+  r: (i % 3 === 0) ? 1.2 : 0.6,
+  spd: 0.08 + (i % 5) * 0.04,
+  alpha: 0.3 + (i % 4) * 0.12,
+}));
+
+function drawStars() {
+  STARS.forEach(s => {
+    s.x -= s.spd;
+    if (s.x < 0) s.x = W() + 2;
+    ctx.globalAlpha = s.alpha;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawGround() {
+  const gy = GY();
+  // Ground fill
+  ctx.fillStyle = '#0c0c28';
+  ctx.fillRect(0, gy + 48, W(), H() - gy - 48);
+  // Glow line
+  ctx.fillStyle = '#7fd6f7';
+  ctx.fillRect(0, gy + 48, W(), 2);
+  ctx.fillStyle = 'rgba(127,214,247,0.08)';
+  ctx.fillRect(0, gy + 50, W(), 12);
+  // Moving dashes
+  groundOff = (groundOff + speed) % 70;
+  ctx.strokeStyle = '#1e1e4a';
+  ctx.lineWidth = 1;
+  for (let x = -groundOff; x < W(); x += 70) {
+    ctx.beginPath(); ctx.moveTo(x, gy + 62); ctx.lineTo(x + 35, gy + 62); ctx.stroke();
+  }
+}
+
+// ─── HERO: pixel-art young man ─────────────────────────────────────────────
+function drawHero() {
+  const gy = GY();
+  hero.vy += 0.78;
+  hero.y += hero.vy;
+  if (hero.y >= gy) { hero.y = gy; hero.vy = 0; hero.jumps = 0; }
+  hero.anim++;
+
+  const px = hero.x;
+  const py = hero.y;
+  const bob = hero.jumps === 0 ? Math.sin(hero.anim * 0.16) * 2 : 0;
+
+  ctx.save();
+  ctx.translate(px, py + bob);
+
+  const S = 2.8; // pixel size
+
+  function px2(col, row, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(col * S - 9 * S, row * S - 22 * S, S, S);
+  }
+
+  // Hair
+  const hairC = '#1a0a00';
+  [[3,0],[4,0],[5,0],[6,0],[7,0],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1]].forEach(([c,r]) => px2(c,r,hairC));
+
+  // Face
+  const skinC = '#f4c07a';
+  [[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],
+   [2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],
+   [2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],
+   [3,5],[4,5],[5,5],[6,5],[7,5],[8,5]].forEach(([c,r]) => px2(c,r,skinC));
+
+  // Eyes
+  px2(4, 3, '#2c1a0e'); px2(7, 3, '#2c1a0e');
+
+  // Mouth (smile)
+  px2(5, 5, '#c8703a'); px2(6, 5, '#c8703a');
+
+  // Neck
+  [[5,6],[6,6]].forEach(([c,r]) => px2(c,r,skinC));
+
+  // Shirt (blue/teal — SEO vibes)
+  const shirtC = '#2563eb';
+  [[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
+   [2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],
+   [2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],
+   [3,10],[4,10],[5,10],[6,10],[7,10],[8,10]].forEach(([c,r]) => px2(c,r,shirtC));
+
+  // Laptop on shirt (tiny)
+  [[4,8],[5,8],[6,8],[7,8]].forEach(([c,r]) => px2(c,r,'#1d4ed8'));
+  px2(5,8,'#7fd6f7'); px2(6,8,'#7fd6f7');
+
+  // Arms
+  const armC = '#f4c07a';
+  // Left arm
+  [[1,7],[1,8],[1,9],[2,10]].forEach(([c,r]) => px2(c,r,shirtC));
+  [[0,10],[1,10],[0,11]].forEach(([c,r]) => px2(c,r,armC));
+  // Right arm
+  [[10,7],[10,8],[10,9],[9,10]].forEach(([c,r]) => px2(c,r,shirtC));
+  [[10,10],[11,10],[11,11]].forEach(([c,r]) => px2(c,r,armC));
+
+  // Pants (dark)
+  const pantsC = '#1e293b';
+  [[3,11],[4,11],[5,11],[6,11],[7,11],[8,11],
+   [3,12],[4,12],[5,12],[6,12],[7,12],[8,12]].forEach(([c,r]) => px2(c,r,pantsC));
+
+  // Legs (running anim)
+  const legPhase = hero.jumps === 0 ? Math.sin(hero.anim * 0.3) : 0;
+  [[3,13],[4,13]].forEach(([c,r]) => px2(c + (legPhase > 0 ? 1 : 0), r, pantsC));
+  [[7,13],[8,13]].forEach(([c,r]) => px2(c + (legPhase < 0 ? 1 : 0), r, pantsC));
+
+  // Shoes
+  const shoeC = '#f59e0b';
+  [[2,14],[3,14],[4,14]].forEach(([c,r]) => px2(c,r,shoeC));
+  [[7,14],[8,14],[9,14]].forEach(([c,r]) => px2(c,r,shoeC));
+
+  // Shadow on ground when in air
+  if (hero.jumps > 0) {
+    const shadowY = gy - py + 4;
+    ctx.globalAlpha = Math.max(0, 0.4 - (gy - py) / 200);
+    ctx.fillStyle = 'rgba(127,214,247,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(S * 5.5 - 9 * S, shadowY, 18, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+// ─── OBJECTS ─────────────────────────────────────────────────────────────
+function spawnObject() {
+  const isGood = Math.random() < 0.52;
+  const data = isGood ? pickItem(GOOD_POOL, usedGood) : pickItem(BAD_POOL, usedBad);
+  const floating = isGood && Math.random() < 0.45;
+  const yOff = floating ? 60 + Math.random() * 60 : 0;
+  objects.push({
+    x: W() + 50, y: GY() - yOff,
+    icon: data.icon, label: data.label,
+    isGood, pts: data.pts || 0, hit: false,
+    wobble: Math.random() * Math.PI * 2,
+  });
+}
+
+function drawObjects() {
+  objects.forEach(obj => {
+    obj.x -= speed;
+    obj.wobble += 0.06;
+    if (obj.hit) return;
+
+    const yw = obj.isGood ? Math.sin(obj.wobble) * 4 : 0;
+
+    // Glow behind good items
+    if (obj.isGood) {
+      ctx.shadowColor = '#7fd6f7';
+      ctx.shadowBlur = 14;
+    }
+    ctx.font = '28px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(obj.icon, obj.x, obj.y + yw);
+    ctx.shadowBlur = 0;
+
+    // Label bubble
+    const lw = ctx.measureText(obj.label).width + 10;
+    ctx.fillStyle = obj.isGood ? 'rgba(127,214,247,0.12)' : 'rgba(255,107,107,0.12)';
+    ctx.beginPath();
+    ctx.roundRect(obj.x - lw / 2, obj.y + yw + 3, lw, 16, 4);
+    ctx.fill();
+    ctx.font = '10px Courier New';
+    ctx.fillStyle = obj.isGood ? '#7fd6f7' : '#ff6b6b';
+    ctx.fillText(obj.label, obj.x, obj.y + yw + 14);
+
+    // Collision
+    const dx = Math.abs(hero.x - obj.x);
+    const heroTop = hero.y - 44;
+    if (dx < 24 && hero.y >= obj.y - 30 && heroTop <= obj.y + 4) {
+      obj.hit = true;
+      addParticles(obj.x, obj.y + yw, obj.isGood);
+      if (obj.isGood) {
+        score += obj.pts;
+        const m = POSITIVE_MSGS[Math.floor(Math.random() * POSITIVE_MSGS.length)];
+        floatMsgs.push({ text: m, good: true, x: hero.x + 20, y: hero.y - 55, alpha: 1 });
+      } else {
+        lives--;
+        const m = NEGATIVE_MSGS[Math.floor(Math.random() * NEGATIVE_MSGS.length)];
+        floatMsgs.push({ text: m, good: false, x: hero.x + 20, y: hero.y - 55, alpha: 1 });
+        // Screen flash
+        hero.hit = true;
+        setTimeout(() => { hero.hit = false; }, 300);
+        if (lives <= 0) { endGame(false); return; }
+      }
+      updateUI();
+    }
+  });
+  objects = objects.filter(o => o.x > -80);
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.034;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  particles = particles.filter(p => p.life > 0);
+}
+
+function drawFloatMsgs() {
+  floatMsgs.forEach(m => {
+    m.y -= 1.3; m.alpha -= 0.024;
+    ctx.globalAlpha = Math.max(0, m.alpha);
+    ctx.font = 'bold 14px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = m.good ? '#7fd6f7' : '#ff6b6b';
+    ctx.fillText(m.text, m.x, m.y);
+  });
+  ctx.globalAlpha = 1;
+  floatMsgs = floatMsgs.filter(m => m.alpha > 0);
+}
+
+function drawHitFlash() {
+  if (hero.hit) {
+    ctx.fillStyle = 'rgba(255,80,80,0.18)';
+    ctx.fillRect(0, 0, W(), H());
+  }
+}
+
+function endGame(win) {
+  state = 'over';
+  cancelAnimationFrame(animId);
+  const msgs = win ? WIN_MSGS : LOSE_MSGS;
+  const msg = msgs[Math.floor(Math.random() * msgs.length)].replace(/\n/g, '<br>');
+  overlay.style.display = 'flex';
+  overlay.innerHTML = win
+    ? `<h1>🏆 بطل السيو!</h1>
+       <div class="final-score">${score} نقطة</div>
+       <p class="msg">${msg}</p>
+       <button class="play-btn" onclick="startGame()">العب تاني ▶</button>`
+    : `<h1 style="color:#ff6b6b">💀 Google حجبك!</h1>
+       <div class="final-score" style="color:#ff9999">${score} نقطة</div>
+       <p class="msg">${msg}</p>
+       <button class="play-btn" onclick="startGame()">حاول تاني ▶</button>`;
+}
+
+// ─── MAIN LOOP ─────────────────────────────────────────────────────────────
+function loop() {
+  if (state !== 'playing') return;
+  frame++;
+
+  drawBG();
+  drawStars();
+  drawGround();
+  drawHero();
+  drawObjects();
+  drawParticles();
+  drawFloatMsgs();
+  drawHitFlash();
+
+  const rate = Math.max(50, 115 - Math.floor(frame / 160) * 7);
+  if (frame % rate === 0) spawnObject();
+  speed = 3.5 + frame / 650;
+
+  if (score >= 500 && state === 'playing') { endGame(true); return; }
+  animId = requestAnimationFrame(loop);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+initState();
+</script>
+</body>
+</html>
+GAMEFILE
+echo "Done"
+Output
+Done
+
+
