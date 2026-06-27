@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/index.html << 'GAMEFILE'
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -20,7 +19,6 @@ canvas { display: block; position: absolute; top: 0; left: 0; }
 #progress-label { color: #888; font-size: 10px; }
 #progress-bar { width: 140px; height: 8px; background: #1a1a3a; border-radius: 4px; overflow: hidden; }
 #progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7fd6f7, #a78bfa); border-radius: 4px; transition: width 0.3s; }
-
 #overlay {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -28,9 +26,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; }
 }
 #overlay h1 { font-size: 30px; color: #7fd6f7; margin-bottom: 4px; text-shadow: 0 0 20px rgba(127,214,247,0.4); }
 #overlay .tagline { color: #a78bfa; font-size: 13px; margin-bottom: 18px; }
-.hint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 400px; margin-bottom: 18px; }
-.hint-box { padding: 10px 12px; border-radius: 8px; font-size: 11px; line-height: 1.7; text-align: right; }
-.hint-box h4 { font-size: 11px; margin-bottom: 4px; font-weight: bold; }
+.hint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 420px; margin-bottom: 18px; }
+.hint-box { padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.8; text-align: right; }
+.hint-box h4 { font-size: 12px; margin-bottom: 6px; font-weight: bold; }
 .hint-box.good { background: rgba(127,214,247,0.08); border: 1px solid rgba(127,214,247,0.25); color: #9de8ff; }
 .hint-box.good h4 { color: #7fd6f7; }
 .hint-box.bad  { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.25); color: #ffaaaa; }
@@ -47,7 +45,13 @@ canvas { display: block; position: absolute; top: 0; left: 0; }
 .play-btn:active { transform: scale(0.97); }
 #controls-tip {
   position: absolute; bottom: 12px; left: 0; right: 0;
-  text-align: center; color: #333; font-size: 11px; pointer-events: none;
+  text-align: center; color: #444; font-size: 11px; pointer-events: none;
+}
+#music-btn {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(127,214,247,0.1); border: 1px solid rgba(127,214,247,0.3);
+  color: #7fd6f7; font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  cursor: pointer; font-family: inherit; display: none; z-index: 10;
 }
 </style>
 </head>
@@ -61,37 +65,39 @@ canvas { display: block; position: absolute; top: 0; left: 0; }
   </div>
   <div id="lives-box">❤️❤️❤️</div>
 </div>
+<button id="music-btn" onclick="toggleMusic()">🎵 موسيقى: شغال</button>
 
 <div id="overlay">
   <h1>SEO Hero 🚀</h1>
   <div class="tagline">ابقى في الصفحة الأولى!</div>
   <div class="hint-grid">
     <div class="hint-box good">
-      <h4>✅ اجمع</h4>
-      كلمات مفتاحية طويلة<br>
-      لينكات .edu و .gov<br>
-      Core Web Vitals<br>
-      Schema Markup<br>
-      محتوى E-E-A-T<br>
+      <h4>✅ اجمع هذول</h4>
+      🔑 Long-tail Keyword<br>
+      ⚡ Core Web Vitals<br>
+      💪 Backlink .edu<br>
+      📝 محتوى E-E-A-T<br>
+      🔒 HTTPS<br>
       وأكتر من كده!
     </div>
     <div class="hint-box bad">
-      <h4>❌ اتجنب</h4>
-      Keyword Stuffing<br>
-      Duplicate Content<br>
-      Toxic Backlinks<br>
-      Slow Server (TTFB)<br>
-      Hidden Text<br>
+      <h4>❌ اتجنب هذول</h4>
+      🚫 Keyword Stuffing<br>
+      💀 Duplicate Content<br>
+      🤡 Toxic Backlinks<br>
+      🐌 Slow TTFB<br>
+      🎭 Cloaking<br>
       وأكتر من كده!
     </div>
   </div>
-  <p class="msg">وصّل لـ 500 نقطة — قفزتين في الهواء متاحين! كل مرة هتلاقي حاجات سيو مختلفة.</p>
+  <p class="msg">وصّل لـ 500 نقطة — قفزتين في الهواء! كل مرة حاجات سيو مختلفة.</p>
   <button class="play-btn" onclick="startGame()">العب دلوقتي ▶</button>
 </div>
 
 <div id="controls-tip">مفتاح المسافة / ↑ / دوس على الشاشة للقفز • قفزتين!</div>
 
 <script>
+// ─── CANVAS SETUP ─────────────────────────────────────────────────────────
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const overlay = document.getElementById('overlay');
@@ -99,107 +105,190 @@ const scoreEl = document.getElementById('score-box');
 const livesEl = document.getElementById('lives-box');
 const progFill = document.getElementById('progress-fill');
 const progLabel = document.getElementById('progress-label');
+const musicBtn = document.getElementById('music-btn');
 
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 resize();
 window.addEventListener('resize', resize);
 
-// ─── FULL SEO ITEM POOL ────────────────────────────────────────────────────
+const W = () => canvas.width;
+const H = () => canvas.height;
+// FIX 3: Hero walks ON ground — items spawn at same level or slightly above
+const GY = () => H() - 80; // ground feet level
+
+// ─── MUSIC (Web Audio API — no external files needed) ─────────────────────
+let audioCtx = null, musicOn = true, musicNodes = [];
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  playMusic();
+}
+
+let musicScheduled = false;
+function playMusic() {
+  if (!audioCtx || !musicOn) return;
+  musicScheduled = true;
+  // Simple chiptune loop: bass + melody
+  const BPM = 128;
+  const beat = 60 / BPM;
+  const now = audioCtx.currentTime;
+
+  // Bass pattern (root notes)
+  const bassNotes = [110, 110, 82.4, 92.5, 110, 110, 82.4, 82.4];
+  bassNotes.forEach((freq, i) => {
+    scheduleNote(freq, now + i * beat * 0.5, beat * 0.45, 0.18, 'sawtooth');
+  });
+
+  // Melody pattern
+  const melodyNotes = [
+    440, 0, 523, 0, 659, 587, 523, 0,
+    494, 0, 440, 0, 392, 0, 440, 0,
+  ];
+  melodyNotes.forEach((freq, i) => {
+    if (freq > 0) scheduleNote(freq, now + i * beat * 0.25, beat * 0.22, 0.07, 'square');
+  });
+
+  // Hi-hat rhythm
+  for (let i = 0; i < 8; i++) {
+    scheduleNoise(now + i * beat * 0.5, 0.04, 0.04);
+  }
+
+  const loopDur = beat * 4;
+  setTimeout(() => { if (musicOn && musicScheduled) playMusic(); }, loopDur * 1000 - 60);
+}
+
+function scheduleNote(freq, start, dur, gain, type) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(gain, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(start); osc.stop(start + dur);
+  musicNodes.push(osc);
+}
+
+function scheduleNoise(start, dur, gain) {
+  if (!audioCtx) return;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const g = audioCtx.createGain();
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'highpass'; filt.frequency.value = 6000;
+  g.gain.setValueAtTime(gain, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  src.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
+  src.start(start); src.stop(start + dur);
+}
+
+function playSfx(type) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  if (type === 'collect') {
+    scheduleNote(880, now, 0.08, 0.12, 'square');
+    scheduleNote(1046, now + 0.05, 0.08, 0.10, 'square');
+  } else if (type === 'hit') {
+    scheduleNote(180, now, 0.15, 0.15, 'sawtooth');
+    scheduleNote(120, now + 0.08, 0.1, 0.1, 'sawtooth');
+  } else if (type === 'jump') {
+    scheduleNote(300, now, 0.05, 0.06, 'square');
+    scheduleNote(500, now + 0.04, 0.05, 0.05, 'square');
+  }
+}
+
+function toggleMusic() {
+  musicOn = !musicOn;
+  musicScheduled = false;
+  musicBtn.textContent = `🎵 موسيقى: ${musicOn ? 'شغال' : 'وقفت'}`;
+  if (musicOn) playMusic();
+}
+
+// ─── SEO ITEM POOLS ────────────────────────────────────────────────────────
 const GOOD_POOL = [
-  // On-page
-  { icon: '🔑', label: 'Long-tail Keyword',     pts: 10, cat: 'on-page' },
-  { icon: '🏷️', label: 'H1 واضح ومُحسَّن',      pts: 10, cat: 'on-page' },
-  { icon: '📝', label: 'Meta Description',       pts: 10, cat: 'on-page' },
-  { icon: '🖼️', label: 'Alt Text للصور',         pts: 8,  cat: 'on-page' },
-  { icon: '🔗', label: 'Internal Linking',       pts: 12, cat: 'on-page' },
-  { icon: '📋', label: 'Table of Contents',      pts: 8,  cat: 'on-page' },
-  { icon: '✍️', label: 'محتوى E-E-A-T',          pts: 20, cat: 'on-page' },
-  { icon: '📐', label: 'Schema Markup',          pts: 15, cat: 'technical' },
-  { icon: '⚡', label: 'Core Web Vitals',        pts: 25, cat: 'technical' },
-  { icon: '🗺️', label: 'XML Sitemap',            pts: 12, cat: 'technical' },
-  { icon: '🤖', label: 'Robots.txt صح',          pts: 10, cat: 'technical' },
-  { icon: '🔒', label: 'HTTPS',                  pts: 15, cat: 'technical' },
-  { icon: '📱', label: 'Mobile-First',           pts: 20, cat: 'technical' },
-  { icon: '🏎️', label: 'سرعة الصفحة',           pts: 18, cat: 'technical' },
-  { icon: '💪', label: 'Backlink .edu',          pts: 25, cat: 'off-page' },
-  { icon: '🏛️', label: 'Backlink .gov',          pts: 30, cat: 'off-page' },
-  { icon: '📰', label: 'Digital PR',             pts: 20, cat: 'off-page' },
-  { icon: '🌍', label: 'Brand Mentions',         pts: 12, cat: 'off-page' },
-  { icon: '⭐', label: 'Google Reviews',         pts: 15, cat: 'off-page' },
-  { icon: '🎯', label: 'Search Intent Match',    pts: 20, cat: 'content' },
-  { icon: '🔄', label: 'Content Refresh',        pts: 15, cat: 'content' },
-  { icon: '📊', label: 'Featured Snippet',       pts: 25, cat: 'content' },
-  { icon: '❓', label: 'People Also Ask',        pts: 15, cat: 'content' },
-  { icon: '🎬', label: 'Video Embed',            pts: 12, cat: 'content' },
-  { icon: '📈', label: 'Click-through Rate',     pts: 18, cat: 'metrics' },
-  { icon: '⏱️', label: 'Dwell Time عالي',        pts: 15, cat: 'metrics' },
-  { icon: '📉', label: 'Bounce Rate منخفض',      pts: 15, cat: 'metrics' },
+  { icon: '🔑', label: 'Long-tail Keyword',      pts: 10 },
+  { icon: '🏷️', label: 'H1 واضح ومُحسَّن',       pts: 10 },
+  { icon: '📝', label: 'Meta Description',        pts: 10 },
+  { icon: '🖼️', label: 'Alt Text للصور',          pts: 8  },
+  { icon: '🔗', label: 'Internal Linking',        pts: 12 },
+  { icon: '📋', label: 'Table of Contents',       pts: 8  },
+  { icon: '✍️', label: 'محتوى E-E-A-T',           pts: 20 },
+  { icon: '📐', label: 'Schema Markup',           pts: 15 },
+  { icon: '⚡', label: 'Core Web Vitals',         pts: 25 },
+  { icon: '🗺️', label: 'XML Sitemap',             pts: 12 },
+  { icon: '🤖', label: 'Robots.txt صح',           pts: 10 },
+  { icon: '🔒', label: 'HTTPS',                   pts: 15 },
+  { icon: '📱', label: 'Mobile-First',            pts: 20 },
+  { icon: '🏎️', label: 'سرعة الصفحة',            pts: 18 },
+  { icon: '💪', label: 'Backlink .edu',           pts: 25 },
+  { icon: '🏛️', label: 'Backlink .gov',           pts: 30 },
+  { icon: '📰', label: 'Digital PR',              pts: 20 },
+  { icon: '🌍', label: 'Brand Mentions',          pts: 12 },
+  { icon: '⭐', label: 'Google Reviews',          pts: 15 },
+  { icon: '🎯', label: 'Search Intent Match',     pts: 20 },
+  { icon: '🔄', label: 'Content Refresh',         pts: 15 },
+  { icon: '📊', label: 'Featured Snippet',        pts: 25 },
+  { icon: '❓', label: 'People Also Ask',         pts: 15 },
+  { icon: '🎬', label: 'Video Embed',             pts: 12 },
+  { icon: '📈', label: 'Click-through Rate',      pts: 18 },
+  { icon: '⏱️', label: 'Dwell Time عالي',         pts: 15 },
+  { icon: '📉', label: 'Bounce Rate منخفض',       pts: 15 },
+  { icon: '🌐', label: 'Hreflang Tags',           pts: 12 },
+  { icon: '🔍', label: 'Search Console Fix',      pts: 18 },
+  { icon: '💡', label: 'Topical Authority',       pts: 22 },
 ];
 
 const BAD_POOL = [
-  { icon: '🚫', label: 'Keyword Stuffing',       cat: 'penalty' },
-  { icon: '💀', label: 'Duplicate Content',      cat: 'penalty' },
-  { icon: '🔓', label: 'موقع متهاك',             cat: 'penalty' },
-  { icon: '🤡', label: 'Toxic Backlinks',        cat: 'penalty' },
-  { icon: '👻', label: 'Hidden Text',            cat: 'penalty' },
-  { icon: '🐌', label: 'Slow TTFB',             cat: 'technical' },
-  { icon: '💔', label: 'Broken Links كتير',      cat: 'technical' },
-  { icon: '🔀', label: 'Redirect Chains',        cat: 'technical' },
-  { icon: '📵', label: 'مش Mobile Friendly',     cat: 'technical' },
-  { icon: '🎭', label: 'Cloaking',               cat: 'blackhat' },
-  { icon: '💸', label: 'Link Buying',            cat: 'blackhat' },
-  { icon: '🌀', label: 'Doorway Pages',          cat: 'blackhat' },
-  { icon: '🗑️', label: 'Thin Content',           cat: 'content' },
-  { icon: '📋', label: 'Copied Content',         cat: 'content' },
-  { icon: '🤖', label: 'AI Spam Content',        cat: 'content' },
-  { icon: '📧', label: 'سبام Schema',            cat: 'technical' },
-  { icon: '⚠️', label: 'Manual Action',          cat: 'penalty' },
-  { icon: '🔗', label: 'Link Farm',              cat: 'blackhat' },
+  { icon: '🚫', label: 'Keyword Stuffing'    },
+  { icon: '💀', label: 'Duplicate Content'   },
+  { icon: '🔓', label: 'موقع متهاك'          },
+  { icon: '🤡', label: 'Toxic Backlinks'     },
+  { icon: '👻', label: 'Hidden Text'         },
+  { icon: '🐌', label: 'Slow TTFB'          },
+  { icon: '💔', label: 'Broken Links كتير'   },
+  { icon: '🔀', label: 'Redirect Chains'     },
+  { icon: '📵', label: 'مش Mobile Friendly'  },
+  { icon: '🎭', label: 'Cloaking'            },
+  { icon: '💸', label: 'Link Buying'         },
+  { icon: '🌀', label: 'Doorway Pages'       },
+  { icon: '🗑️', label: 'Thin Content'        },
+  { icon: '📋', label: 'Copied Content'      },
+  { icon: '🤖', label: 'AI Spam Content'     },
+  { icon: '📧', label: 'Spam Schema'         },
+  { icon: '⚠️', label: 'Manual Action'       },
+  { icon: '🔗', label: 'Link Farm'           },
+  { icon: '🕳️', label: 'Orphan Pages'       },
+  { icon: '🧨', label: 'Core Update Penalty' },
 ];
 
-const POSITIVE_MSGS = [
-  'ممتاز! 🔥', 'Google بيحبك! ❤️', 'SERP ليك! 🏆',
-  'فاهم السيو! 💪', 'أول صفحة! ⭐', 'تمام التمام! 🎯',
-  'Indexed! ✅', 'Ranking Up! 📈',
-];
-const NEGATIVE_MSGS = [
-  'Penalty! 🚨', 'Deindex قادم! ☠️', 'Manual Action! 🚫',
-  'Google مش عاجبه! 😬', 'Spam! ⚠️', 'Ranking Down! 📉',
-];
-const WIN_MSGS = [
-  '"أنت مش بس عارف السيو — أنت عايشه!\nالـ SERP هيبقى ليك دايمًا." 🏆',
-  '"Algorithm بيخافك!\nأول صفحة في Google حقك." 🚀',
-  '"Core Update عدى عليك وأنت تمام!\nده معناه إنت شغال بضمير." ⭐',
-];
-const LOSE_MSGS = [
-  '"حتى Google بيتعلم من غلطاته،\nإنت كمان تقدر! جرب تاني." 😅',
-  '"Manual Action؟ معلش!\nكل خبير اتعاقب مرة، الأهم ترجع أقوى." 💪',
-  '"الـ Penalty مش نهاية الدنيا،\nاعمل Reconsideration Request وارجع!" 🔄',
-];
+const POS_MSGS  = ['ممتاز! 🔥','Google بيحبك! ❤️','SERP ليك! 🏆','فاهم السيو! 💪','أول صفحة! ⭐','Ranking Up! 📈','Indexed! ✅','تمام التمام! 🎯'];
+const NEG_MSGS  = ['Penalty! 🚨','Deindex قادم! ☠️','Manual Action! 🚫','Google مش عاجبه! 😬','Ranking Down! 📉','Spam Alert! ⚠️'];
+const WIN_MSGS  = ['"أنت مش بس عارف السيو — أنت عايشه!\nالـ SERP هيبقى ليك دايمًا." 🏆','"Algorithm بيخافك!\nأول صفحة في Google حقك." 🚀','"Core Update عدى عليك وأنت تمام!\nده معناه إنت شغال بضمير." ⭐'];
+const LOSE_MSGS = ['"حتى Google بيتعلم من غلطاته،\nإنت كمان تقدر! جرب تاني." 😅','"Manual Action؟ معلش!\nكل خبير اتعاقب مرة، الأهم ترجع أقوى." 💪','"الـ Penalty مش نهاية الدنيا،\nاعمل Reconsideration Request وارجع!" 🔄'];
 
 // ─── STATE ────────────────────────────────────────────────────────────────
 let state = 'idle';
-let score = 0, lives = 3, frame = 0, speed = 3.5;
-let animId = null;
-
-const W = () => canvas.width;
-const H = () => canvas.height;
-const GY = () => H() - 72; // ground y (feet level)
-
+let score, lives, frame, speed, animId;
 let hero, objects, particles, floatMsgs, groundOff, usedGood, usedBad;
 
 function initState() {
-  hero = { x: 95, y: GY(), vy: 0, jumps: 0, anim: 0, hit: false };
+  score = 0; lives = 3; frame = 0;
+  speed = 2.2; // FIX 3: start slower
+  hero = { x: 95, y: GY(), vy: 0, jumps: 0, anim: 0, hit: false, hitTimer: 0 };
   objects = []; particles = []; floatMsgs = [];
   groundOff = 0; usedGood = []; usedBad = [];
-  score = 0; lives = 3; frame = 0; speed = 3.5;
 }
 
-function pickItem(pool, usedArr) {
-  let available = pool.filter((_, i) => !usedArr.includes(i));
-  if (available.length === 0) { usedArr.length = 0; available = pool; }
-  const idx = pool.indexOf(available[Math.floor(Math.random() * available.length)]);
-  usedArr.push(idx);
+function pickItem(pool, used) {
+  let avail = pool.filter((_, i) => !used.includes(i));
+  if (!avail.length) { used.length = 0; avail = pool; }
+  const idx = pool.indexOf(avail[Math.floor(Math.random() * avail.length)]);
+  used.push(idx);
   return pool[idx];
 }
 
@@ -213,6 +302,8 @@ function updateUI() {
 
 function startGame() {
   overlay.style.display = 'none';
+  musicBtn.style.display = 'block';
+  initAudio();
   state = 'playing';
   initState();
   updateUI();
@@ -220,185 +311,156 @@ function startGame() {
   loop();
 }
 
+// ─── INPUT ────────────────────────────────────────────────────────────────
 function jump() {
   if (state !== 'playing') return;
   if (hero.jumps < 2) {
-    hero.vy = hero.jumps === 0 ? -16 : -12;
+    hero.vy = hero.jumps === 0 ? -15 : -11;
     hero.jumps++;
-    addParticles(hero.x, hero.y, true, 4, '#a78bfa');
+    addParticles(hero.x, hero.y, true, 5, '#a78bfa');
+    playSfx('jump');
   }
 }
-
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
-});
+document.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } });
 canvas.addEventListener('click', jump);
 canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
 
-// ─── PARTICLE ────────────────────────────────────────────────────────────
-function addParticles(x, y, good, count = 12, overrideColor = null) {
+// ─── PARTICLES ────────────────────────────────────────────────────────────
+function addParticles(x, y, good, count = 12, col = null) {
   for (let i = 0; i < count; i++) {
     particles.push({
       x, y,
       vx: (Math.random() - 0.5) * 7,
       vy: (Math.random() - 1.8) * 5,
       life: 1,
-      color: overrideColor || (good ? '#7fd6f7' : '#ff6b6b'),
+      color: col || (good ? '#7fd6f7' : '#ff6b6b'),
       size: Math.random() * 5 + 2,
     });
   }
 }
 
-// ─── DRAW HELPERS ─────────────────────────────────────────────────────────
-function drawBG() {
-  // Deep space gradient
-  const grad = ctx.createLinearGradient(0, 0, 0, H());
-  grad.addColorStop(0, '#080818');
-  grad.addColorStop(1, '#0d0d2a');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W(), H());
-}
-
-// Procedural stars (seeded by index so they're stable)
+// ─── BACKGROUND ───────────────────────────────────────────────────────────
 const STARS = Array.from({ length: 80 }, (_, i) => ({
-  x: (i * 293 + 17) % 1400,
-  y: (i * 137 + 53) % 380,
-  r: (i % 3 === 0) ? 1.2 : 0.6,
-  spd: 0.08 + (i % 5) * 0.04,
-  alpha: 0.3 + (i % 4) * 0.12,
+  x: (i * 293 + 17) % 1400, y: (i * 137 + 53) % 350,
+  r: i % 3 === 0 ? 1.2 : 0.6,
+  spd: 0.06 + (i % 5) * 0.03, alpha: 0.25 + (i % 4) * 0.12,
 }));
 
+function drawBG() {
+  ctx.fillStyle = '#080818'; ctx.fillRect(0, 0, W(), H());
+}
 function drawStars() {
   STARS.forEach(s => {
-    s.x -= s.spd;
-    if (s.x < 0) s.x = W() + 2;
-    ctx.globalAlpha = s.alpha;
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fill();
+    s.x -= s.spd; if (s.x < 0) s.x = W() + 2;
+    ctx.globalAlpha = s.alpha; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
   });
   ctx.globalAlpha = 1;
 }
-
 function drawGround() {
   const gy = GY();
-  // Ground fill
-  ctx.fillStyle = '#0c0c28';
-  ctx.fillRect(0, gy + 48, W(), H() - gy - 48);
-  // Glow line
-  ctx.fillStyle = '#7fd6f7';
-  ctx.fillRect(0, gy + 48, W(), 2);
-  ctx.fillStyle = 'rgba(127,214,247,0.08)';
-  ctx.fillRect(0, gy + 50, W(), 12);
-  // Moving dashes
+  ctx.fillStyle = '#0c0c28'; ctx.fillRect(0, gy + 48, W(), H() - gy - 48);
+  ctx.fillStyle = '#7fd6f7'; ctx.fillRect(0, gy + 48, W(), 2);
+  ctx.fillStyle = 'rgba(127,214,247,0.07)'; ctx.fillRect(0, gy + 50, W(), 10);
   groundOff = (groundOff + speed) % 70;
-  ctx.strokeStyle = '#1e1e4a';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#1a1a44'; ctx.lineWidth = 1;
   for (let x = -groundOff; x < W(); x += 70) {
     ctx.beginPath(); ctx.moveTo(x, gy + 62); ctx.lineTo(x + 35, gy + 62); ctx.stroke();
   }
 }
 
-// ─── HERO: pixel-art young man ─────────────────────────────────────────────
+// ─── HERO (pixel-art guy) ─────────────────────────────────────────────────
 function drawHero() {
   const gy = GY();
-  hero.vy += 0.78;
-  hero.y += hero.vy;
+  hero.vy += 0.78; hero.y += hero.vy;
   if (hero.y >= gy) { hero.y = gy; hero.vy = 0; hero.jumps = 0; }
+  if (hero.hitTimer > 0) hero.hitTimer--;
   hero.anim++;
 
-  const px = hero.x;
-  const py = hero.y;
   const bob = hero.jumps === 0 ? Math.sin(hero.anim * 0.16) * 2 : 0;
+  const px = hero.x, py = hero.y + bob;
+  const S = 3.0;
 
   ctx.save();
-  ctx.translate(px, py + bob);
+  ctx.translate(px, py);
 
-  const S = 2.8; // pixel size
-
-  function px2(col, row, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(col * S - 9 * S, row * S - 22 * S, S, S);
+  // Flicker red if just hit
+  if (hero.hitTimer > 0 && Math.floor(hero.hitTimer / 3) % 2 === 0) {
+    ctx.globalAlpha = 0.4;
   }
+
+  function dot(col, row, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect((col - 6) * S, (row - 20) * S, S - 0.3, S - 0.3);
+  }
+
+  const skin = '#f4c07a', hair = '#1a0800', shirt = '#2563eb', pants = '#1e293b', shoe = '#f59e0b', arm = '#f4c07a';
 
   // Hair
-  const hairC = '#1a0a00';
-  [[3,0],[4,0],[5,0],[6,0],[7,0],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1]].forEach(([c,r]) => px2(c,r,hairC));
-
+  [[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1]].forEach(([c,r])=>dot(c,r,hair));
   // Face
-  const skinC = '#f4c07a';
-  [[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],
-   [2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],
-   [2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],
-   [3,5],[4,5],[5,5],[6,5],[7,5],[8,5]].forEach(([c,r]) => px2(c,r,skinC));
-
+  [[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],
+   [2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],
+   [2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4],
+   [3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[9,5]].forEach(([c,r])=>dot(c,r,skin));
   // Eyes
-  px2(4, 3, '#2c1a0e'); px2(7, 3, '#2c1a0e');
-
-  // Mouth (smile)
-  px2(5, 5, '#c8703a'); px2(6, 5, '#c8703a');
-
+  dot(4,3,'#1a0a00'); dot(5,3,'#1a0a00'); dot(7,3,'#1a0a00'); dot(8,3,'#1a0a00');
+  // Smile
+  dot(5,5,'#c8703a'); dot(6,5,'#c8703a'); dot(7,5,'#c8703a');
   // Neck
-  [[5,6],[6,6]].forEach(([c,r]) => px2(c,r,skinC));
-
-  // Shirt (blue/teal — SEO vibes)
-  const shirtC = '#2563eb';
-  [[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],
-   [2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],
-   [2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],
-   [3,10],[4,10],[5,10],[6,10],[7,10],[8,10]].forEach(([c,r]) => px2(c,r,shirtC));
-
-  // Laptop on shirt (tiny)
-  [[4,8],[5,8],[6,8],[7,8]].forEach(([c,r]) => px2(c,r,'#1d4ed8'));
-  px2(5,8,'#7fd6f7'); px2(6,8,'#7fd6f7');
-
+  [[5,6],[6,6],[7,6]].forEach(([c,r])=>dot(c,r,skin));
+  // Shirt body
+  [[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],
+   [2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],[10,8],
+   [2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[9,9],[10,9],
+   [3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10]].forEach(([c,r])=>dot(c,r,shirt));
+  // Laptop screen detail on shirt
+  dot(5,8,'#7fd6f7'); dot(6,8,'#7fd6f7'); dot(7,8,'#60c0e0');
   // Arms
-  const armC = '#f4c07a';
-  // Left arm
-  [[1,7],[1,8],[1,9],[2,10]].forEach(([c,r]) => px2(c,r,shirtC));
-  [[0,10],[1,10],[0,11]].forEach(([c,r]) => px2(c,r,armC));
-  // Right arm
-  [[10,7],[10,8],[10,9],[9,10]].forEach(([c,r]) => px2(c,r,shirtC));
-  [[10,10],[11,10],[11,11]].forEach(([c,r]) => px2(c,r,armC));
-
-  // Pants (dark)
-  const pantsC = '#1e293b';
-  [[3,11],[4,11],[5,11],[6,11],[7,11],[8,11],
-   [3,12],[4,12],[5,12],[6,12],[7,12],[8,12]].forEach(([c,r]) => px2(c,r,pantsC));
-
-  // Legs (running anim)
-  const legPhase = hero.jumps === 0 ? Math.sin(hero.anim * 0.3) : 0;
-  [[3,13],[4,13]].forEach(([c,r]) => px2(c + (legPhase > 0 ? 1 : 0), r, pantsC));
-  [[7,13],[8,13]].forEach(([c,r]) => px2(c + (legPhase < 0 ? 1 : 0), r, pantsC));
-
+  [[1,7],[1,8],[1,9]].forEach(([c,r])=>dot(c,r,shirt));
+  [[0,9],[0,10],[1,10]].forEach(([c,r])=>dot(c,r,arm));
+  [[11,7],[11,8],[11,9]].forEach(([c,r])=>dot(c,r,shirt));
+  [[11,10],[12,10],[12,9]].forEach(([c,r])=>dot(c,r,arm));
+  // Pants
+  [[3,11],[4,11],[5,11],[6,11],[7,11],[8,11],[9,11],
+   [3,12],[4,12],[5,12],[6,12],[7,12],[8,12],[9,12]].forEach(([c,r])=>dot(c,r,pants));
+  // Running legs
+  const lp = hero.jumps === 0 ? Math.sin(hero.anim * 0.28) : 0;
+  const lo = lp > 0 ? 1 : 0, ro = lp < 0 ? 1 : 0;
+  [[3,13],[4,13]].forEach(([c,r])=>dot(c+lo,r,pants));
+  [[7,13],[8,13]].forEach(([c,r])=>dot(c+ro,r,pants));
   // Shoes
-  const shoeC = '#f59e0b';
-  [[2,14],[3,14],[4,14]].forEach(([c,r]) => px2(c,r,shoeC));
-  [[7,14],[8,14],[9,14]].forEach(([c,r]) => px2(c,r,shoeC));
+  [[2,14],[3,14],[4,14],[5,14]].forEach(([c,r])=>dot(c+lo,r,shoe));
+  [[6,14],[7,14],[8,14],[9,14]].forEach(([c,r])=>dot(c+ro,r,shoe));
 
-  // Shadow on ground when in air
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Ground shadow when airborne
   if (hero.jumps > 0) {
-    const shadowY = gy - py + 4;
-    ctx.globalAlpha = Math.max(0, 0.4 - (gy - py) / 200);
+    const dist = gy - hero.y;
+    ctx.globalAlpha = Math.max(0, 0.35 - dist / 220);
     ctx.fillStyle = 'rgba(127,214,247,0.2)';
-    ctx.beginPath();
-    ctx.ellipse(S * 5.5 - 9 * S, shadowY, 18, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(px, gy + 50, 20, 5, 0, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
   }
-
-  ctx.restore();
 }
 
 // ─── OBJECTS ─────────────────────────────────────────────────────────────
+// FIX 4: items spawn ON ground level or just ONE jump height above — not too high
 function spawnObject() {
   const isGood = Math.random() < 0.52;
   const data = isGood ? pickItem(GOOD_POOL, usedGood) : pickItem(BAD_POOL, usedBad);
-  const floating = isGood && Math.random() < 0.45;
-  const yOff = floating ? 60 + Math.random() * 60 : 0;
+  // Good items: on ground OR floating at comfortable jump height (max 90px above ground)
+  // Bad items: always on ground — hero must jump OVER them or collect them
+  const floating = isGood && Math.random() < 0.4;
+  // y = the BOTTOM of the icon (feet level). Icon is 34px tall, drawn upward from y.
+  // On ground: y = GY() so icon sits right at ground level like the hero.
+  // Floating: raised by 55–90px — reachable with one jump.
+  const yOff = floating ? 55 + Math.random() * 35 : 0;
   objects.push({
-    x: W() + 50, y: GY() - yOff,
+    x: W() + 50,
+    y: GY() - yOff,  // icon bottom sits at this y
     icon: data.icon, label: data.label,
     isGood, pts: data.pts || 0, hit: false,
     wobble: Math.random() * Math.PI * 2,
@@ -406,50 +468,77 @@ function spawnObject() {
 }
 
 function drawObjects() {
+  const gy = GY();
   objects.forEach(obj => {
     obj.x -= speed;
     obj.wobble += 0.06;
     if (obj.hit) return;
 
-    const yw = obj.isGood ? Math.sin(obj.wobble) * 4 : 0;
+    // wobble only for good floating items
+    const yw = (obj.isGood && obj.y < gy - 10) ? Math.sin(obj.wobble) * 3 : 0;
+    // iconY: canvas y where emoji baseline is drawn (icon hangs ABOVE this)
+    // We treat obj.y as the BOTTOM of the icon (≈ feet level)
+    // Canvas fillText draws text with baseline at given y, so icon top ≈ iconY - 34
+    const iconY = obj.y - 4 + yw;   // a tiny 4px lift so icon sits naturally on ground
 
-    // Glow behind good items
-    if (obj.isGood) {
-      ctx.shadowColor = '#7fd6f7';
-      ctx.shadowBlur = 14;
-    }
-    ctx.font = '28px serif';
+    // Glow
+    if (obj.isGood) { ctx.shadowColor = '#7fd6f7'; ctx.shadowBlur = 16; }
+    else            { ctx.shadowColor = '#ff6b6b'; ctx.shadowBlur = 10; }
+
+    // Icon — bigger (38px)
+    ctx.font = '38px serif';
     ctx.textAlign = 'center';
-    ctx.fillText(obj.icon, obj.x, obj.y + yw);
+    ctx.fillText(obj.icon, obj.x, iconY);
     ctx.shadowBlur = 0;
 
-    // Label bubble
-    const lw = ctx.measureText(obj.label).width + 10;
-    ctx.fillStyle = obj.isGood ? 'rgba(127,214,247,0.12)' : 'rgba(255,107,107,0.12)';
+    // Label pill BELOW icon
+    ctx.font = 'bold 13px Courier New';
+    const lw = ctx.measureText(obj.label).width + 18;
+    ctx.fillStyle = obj.isGood ? 'rgba(127,214,247,0.2)' : 'rgba(255,107,107,0.2)';
     ctx.beginPath();
-    ctx.roundRect(obj.x - lw / 2, obj.y + yw + 3, lw, 16, 4);
+    ctx.roundRect(obj.x - lw / 2, iconY + 4, lw, 22, 5);
     ctx.fill();
-    ctx.font = '10px Courier New';
-    ctx.fillStyle = obj.isGood ? '#7fd6f7' : '#ff6b6b';
-    ctx.fillText(obj.label, obj.x, obj.y + yw + 14);
+    ctx.fillStyle = obj.isGood ? '#ccf4ff' : '#ffcccc';
+    ctx.fillText(obj.label, obj.x, iconY + 20);
 
-    // Collision
+    // Ground indicator dot — always visible directly below item on ground line
+    const indicatorX = obj.x;
+    const indicatorColor = obj.isGood ? 'rgba(127,214,247,0.7)' : 'rgba(255,107,107,0.7)';
+    // Dotted vertical line for floating items
+    if (obj.y < gy - 10) {
+      ctx.setLineDash([3, 6]);
+      ctx.strokeStyle = obj.isGood ? 'rgba(127,214,247,0.3)' : 'rgba(255,107,107,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(obj.x, iconY + 28); ctx.lineTo(obj.x, gy + 48); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    // Blinking ground dot
+    if (Math.floor(frame / 8) % 2 === 0) {
+      ctx.fillStyle = indicatorColor;
+      ctx.beginPath(); ctx.arc(indicatorX, gy + 50, 5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // ─── COLLISION ───────────────────────────────────────────────────────
+    // obj.y = bottom of icon. Icon occupies [obj.y-38 .. obj.y].
+    // Hero body: top = hero.y-44, feet = hero.y. Width ~30px each side.
     const dx = Math.abs(hero.x - obj.x);
-    const heroTop = hero.y - 44;
-    if (dx < 24 && hero.y >= obj.y - 30 && heroTop <= obj.y + 4) {
+    const heroFeet = hero.y;
+    const heroTop  = hero.y - 44;
+    const itemTop  = obj.y - 38 + yw;   // top of icon
+    const itemBot  = obj.y + 4  + yw;   // tiny bit below baseline
+
+    if (dx < 32 && heroFeet >= itemTop && heroTop <= itemBot) {
       obj.hit = true;
-      addParticles(obj.x, obj.y + yw, obj.isGood);
+      addParticles(obj.x, iconY, obj.isGood);
       if (obj.isGood) {
         score += obj.pts;
-        const m = POSITIVE_MSGS[Math.floor(Math.random() * POSITIVE_MSGS.length)];
-        floatMsgs.push({ text: m, good: true, x: hero.x + 20, y: hero.y - 55, alpha: 1 });
+        floatMsgs.push({ text: POS_MSGS[Math.floor(Math.random() * POS_MSGS.length)], good: true,  x: hero.x + 20, y: hero.y - 60, alpha: 1 });
+        playSfx('collect');
       } else {
         lives--;
-        const m = NEGATIVE_MSGS[Math.floor(Math.random() * NEGATIVE_MSGS.length)];
-        floatMsgs.push({ text: m, good: false, x: hero.x + 20, y: hero.y - 55, alpha: 1 });
-        // Screen flash
-        hero.hit = true;
-        setTimeout(() => { hero.hit = false; }, 300);
+        floatMsgs.push({ text: NEG_MSGS[Math.floor(Math.random() * NEG_MSGS.length)], good: false, x: hero.x + 20, y: hero.y - 60, alpha: 1 });
+        hero.hitTimer = 30;
+        playSfx('hit');
         if (lives <= 0) { endGame(false); return; }
       }
       updateUI();
@@ -463,9 +552,7 @@ function drawParticles() {
     p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.034;
     ctx.globalAlpha = Math.max(0, p.life);
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
   });
   ctx.globalAlpha = 1;
   particles = particles.filter(p => p.life > 0);
@@ -473,9 +560,9 @@ function drawParticles() {
 
 function drawFloatMsgs() {
   floatMsgs.forEach(m => {
-    m.y -= 1.3; m.alpha -= 0.024;
+    m.y -= 1.3; m.alpha -= 0.022;
     ctx.globalAlpha = Math.max(0, m.alpha);
-    ctx.font = 'bold 14px Courier New';
+    ctx.font = 'bold 15px Courier New';
     ctx.textAlign = 'center';
     ctx.fillStyle = m.good ? '#7fd6f7' : '#ff6b6b';
     ctx.fillText(m.text, m.x, m.y);
@@ -485,8 +572,8 @@ function drawFloatMsgs() {
 }
 
 function drawHitFlash() {
-  if (hero.hit) {
-    ctx.fillStyle = 'rgba(255,80,80,0.18)';
+  if (hero.hitTimer > 20) {
+    ctx.fillStyle = 'rgba(255,60,60,0.15)';
     ctx.fillRect(0, 0, W(), H());
   }
 }
@@ -494,18 +581,11 @@ function drawHitFlash() {
 function endGame(win) {
   state = 'over';
   cancelAnimationFrame(animId);
-  const msgs = win ? WIN_MSGS : LOSE_MSGS;
-  const msg = msgs[Math.floor(Math.random() * msgs.length)].replace(/\n/g, '<br>');
+  const msg = (win ? WIN_MSGS : LOSE_MSGS)[Math.floor(Math.random() * 3)].replace(/\n/g,'<br>');
   overlay.style.display = 'flex';
   overlay.innerHTML = win
-    ? `<h1>🏆 بطل السيو!</h1>
-       <div class="final-score">${score} نقطة</div>
-       <p class="msg">${msg}</p>
-       <button class="play-btn" onclick="startGame()">العب تاني ▶</button>`
-    : `<h1 style="color:#ff6b6b">💀 Google حجبك!</h1>
-       <div class="final-score" style="color:#ff9999">${score} نقطة</div>
-       <p class="msg">${msg}</p>
-       <button class="play-btn" onclick="startGame()">حاول تاني ▶</button>`;
+    ? `<h1>🏆 بطل السيو!</h1><div class="final-score">${score} نقطة</div><p class="msg">${msg}</p><button class="play-btn" onclick="startGame()">العب تاني ▶</button>`
+    : `<h1 style="color:#ff6b6b">💀 Google حجبك!</h1><div class="final-score" style="color:#ff9999">${score} نقطة</div><p class="msg">${msg}</p><button class="play-btn" onclick="startGame()">حاول تاني ▶</button>`;
 }
 
 // ─── MAIN LOOP ─────────────────────────────────────────────────────────────
@@ -522,22 +602,18 @@ function loop() {
   drawFloatMsgs();
   drawHitFlash();
 
-  const rate = Math.max(50, 115 - Math.floor(frame / 160) * 7);
+  // FIX 3: start slow (2.2), ramp gradually — reaches ~5.5 near end
+  speed = 2.2 + frame / 500;
+
+  // Spawn rate also starts relaxed then tightens
+  const rate = Math.max(55, 130 - Math.floor(frame / 180) * 8);
   if (frame % rate === 0) spawnObject();
-  speed = 3.5 + frame / 650;
 
   if (score >= 500 && state === 'playing') { endGame(true); return; }
   animId = requestAnimationFrame(loop);
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────
 initState();
 </script>
 </body>
 </html>
-GAMEFILE
-echo "Done"
-Output
-Done
-
-
